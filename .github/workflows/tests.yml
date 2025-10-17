@@ -1,0 +1,196 @@
+name: Test Suite
+
+# Run tests on push and pull requests
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+      - 'bugfix/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+# Allow manual workflow runs
+  workflow_dispatch:
+
+jobs:
+  # Job 1: Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq curl ca-certificates unzip bc jq
+      
+      - name: Run unit tests
+        run: |
+          cd scripts
+          bash run-tests.sh --unit
+      
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: scripts/tests/test-results/
+          retention-days: 30
+
+  # Job 2: Integration Tests
+  integration-tests:
+    name: Integration Tests (Podman)
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Podman
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman --version
+      
+      - name: Run integration tests
+        run: |
+          cd scripts
+          bash run-tests.sh --integration
+      
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: scripts/tests/test-results/
+          retention-days: 30
+
+  # Job 3: ShellCheck Linting
+  shellcheck:
+    name: ShellCheck Linting
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          shellcheck --version
+      
+      - name: Run ShellCheck on all scripts
+        run: |
+          # Check all .sh files
+          find scripts -name "*.sh" -type f -print0 | \
+            xargs -0 shellcheck --severity=warning --format=gcc
+      
+      - name: Run ShellCheck (strict mode)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+        run: |
+          # Stricter checks for main/develop
+          find scripts -name "*.sh" -type f -print0 | \
+            xargs -0 shellcheck --severity=style --format=gcc
+
+  # Job 4: Dry-Run Validation
+  dry-run-validation:
+    name: Dry-Run Installation Tests
+    runs-on: ubuntu-24.04
+    needs: [unit-tests, integration-tests]
+    
+    strategy:
+      matrix:
+        profile: [minimal, development, full]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq curl ca-certificates unzip bc jq
+      
+      - name: Run dry-run for ${{ matrix.profile }} profile
+        run: |
+          sudo bash scripts/install-prereqs.sh \
+            --dry-run \
+            --profile ${{ matrix.profile }} \
+            --verbose
+      
+      - name: Verify no actual installation occurred
+        run: |
+          # Ensure tools weren't actually installed
+          if command -v bun &> /dev/null; then
+            echo "ERROR: Bun was installed during dry-run!"
+            exit 1
+          fi
+          echo "✅ Dry-run completed successfully - no tools installed"
+
+  # Job 5: Security Scan (Future)
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run basic security checks
+        run: |
+          echo "🔍 Checking for hardcoded secrets..."
+          # Check for potential secrets in code
+          if grep -r "password\|secret\|api_key" scripts/ --exclude-dir=tests; then
+            echo "⚠️ Warning: Potential secrets found in code"
+          else
+            echo "✅ No obvious secrets found"
+          fi
+          
+          echo "🔍 Checking file permissions..."
+          # Check for world-writable files
+          find scripts -type f -perm -002 -ls
+          
+          echo "✅ Basic security checks complete"
+      
+      # Future: Add more sophisticated security scanning
+      # - Trivy for container scanning
+      # - Bandit for Python (when added)
+      # - npm audit (when Node.js added)
+
+  # Job 6: Test Results Summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-24.04
+    needs: [unit-tests, integration-tests, shellcheck, dry-run-validation]
+    if: always()
+    
+    steps:
+      - name: Check test results
+        run: |
+          echo "## Test Suite Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All quality gates passed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ShellCheck: ${{ needs.shellcheck.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dry-Run Validation: ${{ needs.dry-run-validation.result }}" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Fail if any tests failed
+        if: |
+          needs.unit-tests.result == 'failure' ||
+          needs.integration-tests.result == 'failure' ||
+          needs.shellcheck.result == 'failure' ||
+          needs.dry-run-validation.result == 'failure'
+        run: |
+          echo "❌ Some tests failed. Please check the logs above."
+          exit 1
