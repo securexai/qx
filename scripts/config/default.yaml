@@ -1,0 +1,89 @@
+# QX Installation Script Configuration
+# This file contains default configuration values for the installation script
+
+global:
+  log_level: "info"           # debug, info, warn, error
+  log_file: ""                # Leave empty for no file logging
+  cache_dir: "/var/cache/qx-install"
+  temp_dir: "/tmp/qx-install"
+  parallel_downloads: 3
+  download_timeout: 300
+  retry_attempts: 3
+  retry_delay: 2
+
+# Platform requirements
+platform:
+  min_ubuntu_version: "24.04"
+  architectures: ["x86_64"]
+  required_system_packages:
+    - "curl"
+    - "ca-certificates"
+    - "unzip"
+    - "bc"
+    - "jq"
+
+# Installation profiles
+profiles:
+  minimal:
+    - "bun"
+  development:
+    - "bun"
+    - "kubectl"
+    - "kind"
+  full:
+    - "bun"
+    - "podman"
+    - "kubectl"
+    - "kind"
+
+# Security settings
+security:
+  verify_checksums: true
+  require_https: true
+  allow_insecure_downloads: false
+  temp_file_permissions: "600"
+
+# UI settings
+ui:
+  show_progress: true
+  show_summary: true
+  interactive_mode: false
+  color_output: true
+
+# Paths
+paths:
+  lib_dir: "lib"
+  config_dir: "config"
+  plugins_dir: "plugins"
+  bun_install_path: "/usr/local"
+  kubectl_install_path: "/usr/local/bin"
+  kind_install_path: "/usr/local/bin"
+
+# Tool versions and settings
+tools:
+  bun:
+    version: "1.3.0"
+    environment:
+      BUN_INSTALL: "/usr/local"
+
+  podman:
+    version: "5.6.2"
+    package_name: "podman"
+    install_method: "apt"
+
+  kubectl:
+    version: "1.34.1"
+
+  kind:
+    version: "0.30.0"
+
+# Update channels
+channels:
+  stable:
+    bun: "1.3.0"
+    kubectl: "1.34.1"
+    kind: "0.30.0"
+  latest:
+    bun: "latest"
+    kubectl: "stable"
+    kind: "latest"
