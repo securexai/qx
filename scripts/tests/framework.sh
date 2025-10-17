@@ -24,6 +24,10 @@ setup_test_env() {
     # Copy test files (minimal setup)
     mkdir -p "$TEST_SCRIPT_DIR/lib"
     cp -r lib/* "$TEST_SCRIPT_DIR/lib/"
+    mkdir -p "$TEST_SCRIPT_DIR/plugins"
+    cp -r plugins/* "$TEST_SCRIPT_DIR/plugins/"
+    cp install-prereqs.sh "$TEST_SCRIPT_DIR/"
+    chmod +x "$TEST_SCRIPT_DIR/install-prereqs.sh"
     mkdir -p "$TEST_CONFIG_DIR"
     mkdir -p "$TEST_CACHE_DIR"
 
