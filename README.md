@@ -11,6 +11,7 @@
 | Category | Technology | Latest Stable Version (as of mid-2024) |
 |---|---|---|
 | **Runtime** | Bun | 1.1.x |
+| **Package Manager** | Bun / pnpm | latest |
 | **Framework** | React | 18.3.1 |
 | **UI Library** | Chakra UI | 2.8.2 |
 | **State Management** | Zustand | 4.5.2 |
@@ -56,4 +57,10 @@
 It is recommended to use the provided script to install the required tools:
 
 ```bash
-sudo bash development/scripts/install-prereqs.sh
+sudo bash scripts/install-prereqs.sh
+```
+
+## 📚 Documentation
+
+- **[PNPM_FEASIBILITY_ANALYSIS.md](PNPM_FEASIBILITY_ANALYSIS.md)** - Analysis of using pnpm vs Bun for package management
+- **[docs/pnpm-implementation-guide.md](docs/pnpm-implementation-guide.md)** - Implementation guide for Phase 1 React setup
