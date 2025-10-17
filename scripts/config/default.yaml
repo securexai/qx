@@ -62,20 +62,20 @@ paths:
 # Tool versions and settings
 tools:
   bun:
-    version: "1.3.0"
+    version: "1.1.12"
     environment:
       BUN_INSTALL: "/usr/local"
 
   podman:
-    version: "5.6.2"
+    version: "5.0.3"
     package_name: "podman"
     install_method: "apt"
 
   kubectl:
-    version: "1.34.1"
+    version: "1.29.2"
 
   kind:
-    version: "0.30.0"
+    version: "0.22.0"
 
 # Update channels
 channels:

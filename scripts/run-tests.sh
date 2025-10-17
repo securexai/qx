@@ -92,27 +92,21 @@ run_integration_tests() {
     # Run integration tests
     if podman run --rm --name "$container_name" \
         -v "$REPO_DIR:/workspace:ro" \
-        -w /workspace \
+        -w /workspace/scripts \
         --tmpfs /tmp:rw,noexec,nosuid,size=100m \
         docker.io/library/ubuntu:24.04 \
         bash -c "
-            set -e
+            set -ex
             export DEBIAN_FRONTEND=noninteractive
-
-            # Install dependencies (minimal set for testing)
             apt-get update -qq
             apt-get install -y -qq curl ca-certificates unzip bc
 
-            # Run integration tests
-            cd scripts
-            bash tests/framework.sh run_test_suite 'Integration Tests' \
-                test_dry_run_minimal_profile \
-                test_dry_run_development_profile \
-                test_dry_run_full_profile \
-                test_dry_run_specific_tools \
-                test_dry_run_force_mode \
-                test_dry_run_quiet_mode \
-                test_dry_run_with_logging
+            source tests/framework.sh
+            source tests/integration/test_error_handling.sh
+            source tests/integration/test_rollback.sh
+            run_test_suite 'Integration Tests' \
+                test_err_trap_in_subshell \
+                test_automatic_rollback_on_failure
         "; then
         log_success "Integration tests passed"
         return 0

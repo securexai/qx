@@ -118,17 +118,3 @@ kubectl_plugin_uninstall() {
 kubectl_plugin_get_latest_version() {
     curl -L -s https://dl.k8s.io/release/stable.txt
 }
-
-    log_warn "Uninstalling kubectl from: $install_path"
-
-    local kubectl_binary="$install_path/kubectl"
-
-    if [ -f "$kubectl_binary" ]; then
-        rm -f "$kubectl_binary"
-        log_success "kubectl binary removed: $kubectl_binary"
-    else
-        log_warn "kubectl binary not found: $kubectl_binary"
-    fi
-
-    return 0
-}

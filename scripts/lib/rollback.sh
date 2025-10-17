@@ -2,6 +2,28 @@
 
 # Rollback functionality for QX installation script
 # Provides ability to undo installations and restore system state
+#
+# Description:
+# This module implements comprehensive rollback capabilities for the QX installation script.
+# It tracks all installation actions and provides automatic or manual rollback functionality
+# to restore the system to its previous state in case of installation failures.
+#
+# Key Features:
+# - Automatic rollback on installation failures
+# - Manual rollback execution
+# - State persistence to disk
+# - Support for package removal, file restoration, and custom commands
+# - Comprehensive rollback action tracking
+#
+# Rollback Actions Supported:
+# - remove_package: Uninstall system packages
+# - remove_file: Remove installed files and restore backups
+# - restore_file: Restore modified files from backups
+# - run_command: Execute custom rollback commands
+#
+# Usage:
+# The rollback system is automatically initialized during installation and tracks
+# all changes. On failure, perform_rollback() can be called to undo all recorded actions.
 
 # Rollback state tracking
 declare -A ROLLBACK_ACTIONS

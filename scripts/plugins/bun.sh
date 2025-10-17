@@ -154,29 +154,3 @@ bun_plugin_uninstall() {
 bun_plugin_get_latest_version() {
     curl -sSL https://bun.sh/install | grep -o 'BUN_VERSION=".*"' | sed 's/BUN_VERSION="\(.*\)"/\1/'
 }
-
-    log_warn "Uninstalling Bun from: $install_path"
-
-    # Remove installation directory
-    if [ -d "$install_path" ]; then
-        rm -rf "$install_path"
-        log_info "Removed installation directory: $install_path"
-    fi
-
-    # Remove from user's home directory if it exists
-    if [ -n "${HOME:-}" ] && [ -d "$HOME/.bun" ]; then
-        rm -rf "$HOME/.bun"
-        log_info "Removed user installation directory: $HOME/.bun"
-    fi
-
-    # Remove from root's home directory if it exists
-    if [ -d "/root/.bun" ]; then
-        rm -rf "/root/.bun"
-        log_info "Removed root installation directory: /root/.bun"
-    fi
-
-    # Note: We don't modify PATH or other environment variables as they
-    # may be managed by the system or user configuration
-
-    return 0
-}

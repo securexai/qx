@@ -22,7 +22,10 @@ setup_test_env() {
     TEST_CACHE_DIR="$TEST_TMP_DIR/cache"
 
     # Copy test files (minimal setup)
-    mkdir -p "$TEST_SCRIPT_DIR" "$TEST_CONFIG_DIR" "$TEST_CACHE_DIR"
+    mkdir -p "$TEST_SCRIPT_DIR/lib"
+    cp -r lib/* "$TEST_SCRIPT_DIR/lib/"
+    mkdir -p "$TEST_CONFIG_DIR"
+    mkdir -p "$TEST_CACHE_DIR"
 
     # Set up minimal test configuration
     cat > "$TEST_CONFIG_DIR/default.yaml" << 'EOF'
@@ -144,6 +147,8 @@ run_test() {
     local test_name="$1"
     local test_function="$2"
 
+    echo "Inside run_test: $test_name"
+
     TESTS_RUN=$((TESTS_RUN + 1))
 
     echo -n "Running test: $test_name... "
@@ -179,7 +184,7 @@ skip_test() {
 fail() {
     local message="$1"
     echo "FAIL: $message" >&2
-    return 1
+    exit 1
 }
 
 # Test suite runner

@@ -8,122 +8,52 @@
 
 ### Frontend
 
-| Category | Technology |
-|---|---|
-| **Runtime** | Bun 1.3.0 |
-| **Framework** | React 19.x |
-| **UI Library** | Chakra UI 3.27.1 |
-| **State Management** | Zustand + React Query |
-| **Routing** | React Router 7.9.3 |
-| **Form Handling** | React Hook Form with Zod validation |
-| **Testing** | Vitest + React Testing Library |
-| **Bundling** | Vite 5.x |
+| Category | Technology | Latest Stable Version (as of mid-2024) |
+|---|---|---|
+| **Runtime** | Bun | 1.1.x |
+| **Framework** | React | 18.3.1 |
+| **UI Library** | Chakra UI | 2.8.2 |
+| **State Management** | Zustand | 4.5.2 |
+| **Data Fetching** | React Query (TanStack Query) | 5.31.0 |
+| **Routing** | React Router | 6.23.0 |
+| **Form Handling** | React Hook Form | 7.51.3 |
+| **Validation** | Zod | 3.23.4 |
+| **Testing** | Vitest | 1.5.0 |
+| **Testing** | React Testing Library | 15.0.0 |
+| **Bundling** | Vite | 5.2.x |
 
 ### Backend
 
-| Category | Technology |
-|---|---|
-| **Runtime** | Bun 1.3.0 |
-| **Framework** | Bun's native HTTP server |
-| **Database** | PostgreSQL 18 with Drizzle ORM 0.44.6 |
-| **Authentication** | JWT with refresh tokens |
-| **Validation** | Zod schemas |
-| **Testing** | Bun's built-in test runner |
+| Category | Technology | Latest Stable Version (as of mid-2024) |
+|---|---|---|
+| **Runtime** | Bun | 1.1.x |
+| **Framework** | Bun's native HTTP server | (Integrated with Bun) |
+| **Database** | PostgreSQL | 16.x |
+| **ORM** | Drizzle ORM | 0.30.9 |
+| **Authentication** | JWT | (Library dependent, e.g., `jsonwebtoken` 9.0.2) |
+| **Validation** | Zod | 3.23.4 |
+| **Testing** | Bun's built-in test runner | (Integrated with Bun) |
 
 ### DevOps
 
-| Category | Technology |
-|---|---|
-| **Local Development** | Podman 5.6.2 containers |
-| **Local K8s** | kind 0.30.0 |
-| **Production** | AWS (EKS, RDS, ECR) |
-| **CI/CD** | GitHub Actions |
+| Category | Technology | Latest Stable Version (as of mid-2024) |
+|---|---|---|
+| **Local Development** | Podman | 5.0.x |
+| **Local K8s** | kind | 0.22.0 |
+| **K8s CLI** | kubectl | 1.29.x |
+| **Cloud Provider** | AWS (EKS, RDS, ECR) | (EKS 1.29 is latest stable cluster version) |
+| **CI/CD** | GitHub Actions | (Latest workflow syntax) |
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Bun 1.3.0
-- Podman 5.6.2
-- kubectl 1.34.1
-- kind 0.30.0
+- Bun 1.1.x
+- Podman 5.0.x
+- kubectl 1.29.x
+- kind 0.22.0
 
 It is recommended to use the provided script to install the required tools:
 
 ```bash
 sudo bash development/scripts/install-prereqs.sh
-```
-
-### Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/securexai/qx.git
-    cd qx
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    # Install backend dependencies
-    cd backend
-    bun install
-
-    # Install frontend dependencies
-    cd ../frontend
-    bun install
-    ```
-
-## 🔄 Development Workflow
-
-### Branch Strategy
-
-```
-main                    ← Production-ready code
-├── develop            ← Integration branch
-├── feature/*          ← Feature branches
-├── fix/*              ← Bug fix branches
-└── release/*          ← Release preparation
-```
-
-### Pull Request Process
-
-1. Create feature branch from `develop`
-2. Implement changes with tests
-3. Submit PR to `develop` branch
-4. Automated checks must pass
-5. Code review required (minimum 1 reviewer)
-6. Merge after approval
-
-## 🧪 Testing with Podman
-
-To test the `install-prereqs.sh` script in a clean, isolated environment without affecting your local system, you can use a disposable Podman container. The following command will run the script in a read-only mount, ensuring that no changes are made to your local repository:
-
-```bash
-podman run --rm -it -v "$PWD:/workspace:ro" ubuntu:24.04 bash -c "apt-get update -qq && apt-get install -y -qq curl unzip bc && bash /workspace/development/scripts/install-prereqs.sh --dry-run"
-```
-
-### Command Breakdown
-
-*   `podman run`: Runs a new container.
-*   `--rm`: Automatically removes the container when it exits.
-*   `-it`: Runs the container in interactive mode with a pseudo-TTY.
-*   `-v "$PWD:/workspace:ro"`: Mounts the current directory into the container at `/workspace` in read-only mode (`ro`).
-*   `ubuntu:24.04`: The container image to use.
-*   `bash -c "..."`: Executes a series of commands inside the container:
-    1.  `apt-get update -qq`: Updates the package lists.
-    2.  `apt-get install -y -qq curl unzip bc`: Installs the required dependencies.
-    3.  `bash /workspace/development/scripts/install-prereqs.sh --dry-run`: Runs the installation script in dry-run mode.
-
-## 📅 Next Steps
-
-### Immediate Actions (This Week)
-
-1. **Analyze prerequisites and document requirements**
-2. **Create prerequisite verification script**
-3. **Establish documentation foundation**
-
-### Short-term Goals (Next 2 Weeks)
-
-1. **Create project directory structure**
-2. **Initialize backend project with Bun**
-3. **Initialize frontend project with Vite**

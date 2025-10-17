@@ -2,6 +2,24 @@
 
 # Secure downloader module for QX installation script
 # Provides secure downloads with checksum verification and retry logic
+#
+# Description:
+# This module handles all download operations for the QX installation script.
+# It implements security best practices including HTTPS enforcement, checksum
+# verification, retry logic with exponential backoff, and secure temporary file handling.
+#
+# Key Functions:
+# - secure_download: Downloads files with integrity verification
+# - parallel_download: Manages multiple concurrent downloads
+# - verify_checksum: Validates file integrity against expected checksums
+# - check_url: Tests URL accessibility before download attempts
+#
+# Security Features:
+# - HTTPS-only downloads (configurable)
+# - SHA256 checksum verification
+# - Secure temporary file creation (600 permissions)
+# - Automatic cleanup of failed downloads
+# - Retry logic with configurable attempts and delays
 
 # Secure download with checksum verification
 secure_download() {

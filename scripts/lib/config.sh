@@ -56,43 +56,35 @@ load_yaml_config() {
 
     log_debug "Loading configuration from: $config_file"
 
-    # Simple YAML parser (basic implementation)
+    # Clear existing cache before loading
+    CONFIG_CACHE=()
+
     local current_section=""
-    local -a yaml_lines
-
-    # Read file line by line
     while IFS= read -r line || [ -n "$line" ]; do
-        # Skip comments and empty lines
-        [[ $line =~ ^[[:space:]]*# ]] && continue
-        [[ -z "${line// }" ]] && continue
+        # Remove leading whitespace
+        line=$(echo "$line" | sed -e 's/^[[:space:]]*//')
 
-        # Remove leading/trailing whitespace
-        line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-
-        # Check for section headers (lines ending with ':')
-        if [[ $line =~ ^[a-zA-Z_][a-zA-Z0-9_]*:$ ]]; then
-            current_section="${line%:}"
-            continue
-        fi
-
-        # Parse key-value pairs
-        if [[ $line =~ ^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:[[:space:]]*(.+)$ ]]; then
-            local key="${BASH_REMATCH[1]%%:*}"
-            local value="${BASH_REMATCH[1]#*:}"
-
-            # Remove quotes if present
-            value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/;s/^'\''\(.*\)'\''$/\1/')
-
-            # Build full key path
-            local full_key="$current_section.$key"
-            if [ -n "$current_section" ]; then
-                full_key="$current_section.$key"
-            else
-                full_key="$key"
+        # Process lines that are not comments or empty
+        if [[ ! $line =~ ^# ]] && [[ -n $line ]]; then
+            # Check for section headers (e.g., "global:")
+            if [[ $line =~ ^([a-zA-Z0-9_]+): ]]; then
+                current_section="${BASH_REMATCH[1]}"
+                continue
             fi
 
-            CONFIG_CACHE["$full_key"]="$value"
-            log_debug "Loaded config: $full_key = $value"
+            # Check for key-value pairs (e.g., "  log_level: info")
+            if [[ $line =~ ^([a-zA-Z0-9_]+):[[:space:]]*(.*)$ ]]; then
+                local key="${BASH_REMATCH[1]}"
+                local value="${BASH_REMATCH[2]}"
+
+                # Trim comments, quotes, and whitespace from value
+                value=$(echo "$value" | sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+
+                if [ -n "$current_section" ]; then
+                    CONFIG_CACHE["$current_section.$key"]="$value"
+                    log_debug "Loaded config: $current_section.$key = $value"
+                fi
+            fi
         fi
     done < "$config_file"
 
@@ -206,6 +198,9 @@ validate_config() {
         fi
     done
 
+    # Validate tool configurations
+    validate_tool_configs
+
     # Report errors
     if [ ${#errors[@]} -gt 0 ]; then
         log_error "Configuration validation failed:"
@@ -219,13 +214,77 @@ validate_config() {
     fi
 }
 
+# Validate tool-specific configurations
+validate_tool_configs() {
+    local tool_keys
+    tool_keys=$(get_config_keys "tools.*")
+
+    for key in $tool_keys; do
+        # Extract tool name and property
+        if [[ $key =~ ^tools\.([^.]+)\.(.+)$ ]]; then
+            local tool_name="${BASH_REMATCH[1]}"
+            local property="${BASH_REMATCH[2]}"
+            local value
+            value=$(get_config_value "$key")
+
+            case "$property" in
+                version)
+                    # Validate version format (semver-like)
+                    if ! [[ $value =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z0-9.-]+)?$ ]]; then
+                        errors+=("Invalid version format for $tool_name: $value (expected semver format)")
+                    fi
+                    ;;
+                install_path)
+                    # Validate install path exists or is absolute
+                    if [[ ! $value =~ ^/ ]]; then
+                        errors+=("Invalid install_path for $tool_name: $value (must be absolute path)")
+                    fi
+                    ;;
+                package_name)
+                    # Validate package name is not empty
+                    if [ -z "$value" ]; then
+                        errors+=("Empty package_name for $tool_name")
+                    fi
+                    ;;
+                *)
+                    # Allow other properties without strict validation
+                    ;;
+            esac
+        fi
+    done
+
+    # Validate profile configurations
+    local profile_keys=("profiles.minimal" "profiles.development" "profiles.full")
+    for profile_key in "${profile_keys[@]}"; do
+        local profile_value
+        profile_value=$(get_config_value "$profile_key")
+        if [ -n "$profile_value" ]; then
+            # Validate that profile contains valid tool names
+            IFS=',' read -ra tools_in_profile <<< "$profile_value"
+            for tool in "${tools_in_profile[@]}"; do
+                tool=$(echo "$tool" | xargs)  # Trim whitespace
+                if ! array_contains "$tool" "${PLUGIN_REGISTRY[@]}"; then
+                    errors+=("Invalid tool '$tool' in profile $profile_key (not in plugin registry)")
+                fi
+            done
+        fi
+    done
+}
+
 # Initialize configuration system
 init_config() {
-    local config_file="${CONFIG_DIR}/${CONFIG_FILE}"
+    local config_file
+    # If CONFIG_FILE is an absolute path, use it directly.
+    # Otherwise, construct the path from CONFIG_DIR.
+    if [[ "$CONFIG_FILE" == /* ]]; then
+        config_file="$CONFIG_FILE"
+    else
+        config_file="${CONFIG_DIR}/${CONFIG_FILE}"
+    fi
 
     log_debug "Initializing configuration system"
     log_debug "Config directory: $CONFIG_DIR"
-    log_debug "Config file: $config_file"
+    log_debug "Effective config file: $config_file"
 
     # Load configuration file if it exists
     if [ -f "$config_file" ]; then

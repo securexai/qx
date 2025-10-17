@@ -108,3 +108,9 @@ podman_plugin_uninstall() {
         return 1
     fi
 }
+
+
+# Get latest version from apt
+podman_plugin_get_latest_version() {
+    apt-cache show podman 2>/dev/null | grep -oP 'Version: \K[^-]+' | head -1 || echo "not-found"
+}

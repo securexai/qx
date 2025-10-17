@@ -3,15 +3,18 @@
 # Plugin manager module for QX installation script
 # Manages loading, validation, and execution of tool plugins
 
-# Plugin registry
+# Plugin registry - explicit list of supported plugins
 declare -A PLUGINS
 declare -A PLUGIN_STATES
+
+# Explicit plugin registry for better control and security
+PLUGIN_REGISTRY=("bun" "podman" "kubectl" "kind")
 
 # Load all plugins from plugins directory
 load_plugins() {
     local plugin_dir="${SCRIPT_DIR}/plugins"
 
-    log_info "Loading plugins from: $plugin_dir"
+    log_info "Loading plugins from registry: ${PLUGIN_REGISTRY[*]}"
 
     if [ ! -d "$plugin_dir" ]; then
         log_warn "Plugin directory not found: $plugin_dir"
@@ -20,11 +23,11 @@ load_plugins() {
 
     local plugin_count=0
 
-    for plugin_file in "$plugin_dir"/*.sh; do
-        if [ -f "$plugin_file" ]; then
-            local plugin_name
-            plugin_name=$(basename "$plugin_file" .sh)
+    # Load only plugins from the explicit registry
+    for plugin_name in "${PLUGIN_REGISTRY[@]}"; do
+        local plugin_file="${plugin_dir}/${plugin_name}.sh"
 
+        if [ -f "$plugin_file" ]; then
             log_debug "Loading plugin: $plugin_name"
 
             # Source plugin file
@@ -43,6 +46,9 @@ load_plugins() {
                 log_error "❌ Failed to load plugin: $plugin_name"
                 PLUGIN_STATES["$plugin_name"]="failed"
             fi
+        else
+            log_warn "Plugin file not found: $plugin_file"
+            PLUGIN_STATES["$plugin_name"]="missing"
         fi
     done
 
@@ -77,18 +83,23 @@ validate_plugin() {
 # Execute plugin function with error handling
 execute_plugin_function() {
     local plugin_name="$1"
-    local function="$2"
+    local function_suffix="$2"
     shift 2
 
-    local full_function="${plugin_name}_${function}"
+    local full_function_name="${plugin_name}_plugin_${function_suffix}"
 
-    if command -v "$full_function" >/dev/null 2>&1; then
-        "$full_function" "$@"
+    if command -v "$full_function_name" >/dev/null 2>&1; then
+        "$full_function_name" "$@"
         return $?
     else
-        log_error "Plugin function not found: $full_function"
+        log_error "Plugin function not found: $full_function_name"
         return 1
     fi
+}
+
+# Alias for backward compatibility - detect_plugin_tool calls execute_plugin_function with "detect"
+detect_plugin_tool() {
+    execute_plugin_function "$1" "detect"
 }
 
 # Get plugin information
@@ -111,7 +122,7 @@ detect_plugin_tool() {
         return 1
     fi
 
-    execute_plugin_function "$plugin_name" "plugin_detect"
+    execute_plugin_function "$plugin_name" "detect"
 }
 
 # Get plugin dependencies
@@ -199,6 +210,12 @@ uninstall_plugin_tool() {
     if [ -z "${PLUGINS[$plugin_name]:-}" ]; then
         log_error "Plugin not found: $plugin_name"
         return 1
+    fi
+
+    # Check if the tool is installed before attempting to uninstall
+    if ! detect_plugin_tool "$plugin_name"; then
+        log_warn "$plugin_name is not installed, skipping uninstallation."
+        return 0
     fi
 
     log_info "Uninstalling $plugin_name..."

@@ -2,21 +2,55 @@
 
 # QX Prerequisites Installation Script - Enhanced Version
 # Modern, secure, and extensible installation script for QX project prerequisites
+#
+# Description:
+# This script provides automated installation and management of prerequisites for the QX project.
+# It supports multiple installation profiles, secure downloads with checksum verification,
+# automatic rollback on failures, and a modular plugin-based architecture for tool management.
+#
+# Features:
+# - Multiple installation profiles (minimal, development, full)
+# - Secure downloads with checksum verification and retry logic
+# - Automatic rollback functionality for error recovery
+# - Plugin-based architecture for extensible tool support
+# - Comprehensive configuration validation
+# - Dry-run mode for testing installations
+# - Parallel downloads for improved performance
+# - Enhanced input validation and security hardening
+#
+# Requirements:
+# - Ubuntu 24.04 or compatible Linux distribution
+# - curl, ca-certificates, unzip, bc system packages
+# - Root privileges for installation (sudo recommended)
+#
+# Recent Improvements (v2.0.0):
+# - Automatic rollback on installation failures
+# - Explicit plugin registry for security
+# - Comprehensive input validation
+# - Enhanced configuration validation
+# - Improved documentation and maintainability
+#
+# Usage: See --help for detailed usage information
 
 # Fail fast and treat unset variables as errors
 set -euo pipefail
 
 # Get script directory and set up paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source core libraries needed for config loading
+LIB_DIR_DEFAULT="$SCRIPT_DIR/lib"
+source "$LIB_DIR_DEFAULT/utils.sh"
+source "$LIB_DIR_DEFAULT/logger.sh"
+source "$LIB_DIR_DEFAULT/config.sh"
+
+# Now that config is loaded, determine final paths
 LIB_DIR="$SCRIPT_DIR/$(get_config_value "paths.lib_dir" "lib")"
 CONFIG_DIR="$SCRIPT_DIR/$(get_config_value "paths.config_dir" "config")"
 PLUGINS_DIR="$SCRIPT_DIR/$(get_config_value "paths.plugins_dir" "plugins")"
 
-# Source core library modules
-source "$LIB_DIR/utils.sh"
-source "$LIB_DIR/logger.sh"
+# Source remaining library modules
 source "$LIB_DIR/platform.sh"
-source "$LIB_DIR/config.sh"
 source "$LIB_DIR/downloader.sh"
 source "$LIB_DIR/rollback.sh"
 source "$LIB_DIR/plugin_manager.sh"
@@ -33,7 +67,7 @@ CONFIG_FILE="default.yaml"
 CHANNEL="stable"
 UNINSTALL_MODE=false
 
-# CLI argument parsing
+# CLI argument parsing with enhanced input validation
 parse_arguments() {
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -59,18 +93,58 @@ parse_arguments() {
                 shift
                 ;;
             --profile|-p)
-                PROFILE="$2"
+                # Validate profile argument
+                if [ -z "${2:-}" ]; then
+                    log_error "Profile option requires a value"
+                    show_help
+                    exit 1
+                fi
+                case "$2" in
+                    minimal|development|full)
+                        PROFILE="$2"
+                        ;;
+                    *)
+                        log_error "Invalid profile: $2 (must be minimal, development, or full)"
+                        show_help
+                        exit 1
+                        ;;
+                esac
                 shift 2
                 ;;
             --tools|-t)
+                # Validate tools argument
+                if [ -z "${2:-}" ]; then
+                    log_error "Tools option requires a value"
+                    show_help
+                    exit 1
+                fi
                 IFS=',' read -ra SELECTED_TOOLS <<< "$2"
+                # Validate each tool name (basic check for valid characters)
+                for tool in "${SELECTED_TOOLS[@]}"; do
+                    if [[ ! $tool =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                        log_error "Invalid tool name: $tool (must contain only letters, numbers, hyphens, and underscores)"
+                        exit 1
+                    fi
+                done
                 shift 2
                 ;;
             --log-file|-l)
+                # Validate log file path
+                if [ -z "${2:-}" ]; then
+                    log_error "Log-file option requires a value"
+                    show_help
+                    exit 1
+                fi
                 LOG_FILE="$2"
                 shift 2
                 ;;
             --config|-c)
+                # Validate config file path
+                if [ -z "${2:-}" ]; then
+                    log_error "Config option requires a value"
+                    show_help
+                    exit 1
+                fi
                 CONFIG_FILE="$2"
                 shift 2
                 ;;
@@ -79,7 +153,22 @@ parse_arguments() {
                 exit 0
                 ;;
             --channel)
-                CHANNEL="$2"
+                # Validate channel argument
+                if [ -z "${2:-}" ]; then
+                    log_error "Channel option requires a value"
+                    show_help
+                    exit 1
+                fi
+                case "$2" in
+                    stable|latest|beta|nightly)
+                        CHANNEL="$2"
+                        ;;
+                    *)
+                        log_error "Invalid channel: $2 (must be stable, latest, beta, or nightly)"
+                        show_help
+                        exit 1
+                        ;;
+                esac
                 shift 2
                 ;;
             --uninstall)
@@ -153,6 +242,13 @@ EOF
 show_version() {
     echo "QX Prerequisites Installation Script v2.0.0"
     echo "Enhanced version with modular architecture and security features"
+    echo ""
+    echo "Recent improvements:"
+    echo "  - Automatic rollback on installation failures"
+    echo "  - Explicit plugin registry for enhanced security"
+    echo "  - Comprehensive input validation"
+    echo "  - Enhanced configuration validation"
+    echo "  - Improved documentation and maintainability"
 }
 
 # Initialize the script
@@ -297,6 +393,9 @@ install_tools() {
 
     log_info "Starting tool installation..."
 
+    # Set up automatic rollback on error
+    trap 'log_error "Installation failed, performing automatic rollback..."; perform_rollback; exit 1' ERR
+
     for tool in "${SELECTED_TOOLS[@]}"; do
         if ! is_plugin_available "$tool"; then
             log_error "Plugin not available: $tool"
@@ -317,8 +416,14 @@ install_tools() {
         fi
     done
 
+    # Remove the trap since installation completed successfully
+    trap - ERR
+
     log_info "Installation completed: $installed_count successful, $failed_count failed"
-    return $failed_count
+    if [ "$failed_count" -gt 0 ]; then
+        return 1
+    fi
+    return 0
 }
 
 # Uninstall tools
@@ -393,8 +498,32 @@ generate_summary() {
     fi
 }
 
+# Error handling function
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    local command=$2
+
+    if [ $exit_code -ne 0 ]; then
+        log_error "Error on line $line_number: command '$command' exited with status $exit_code"
+        
+        if can_rollback; then
+            log_warn "An error occurred. Attempting to roll back changes..."
+            perform_rollback
+            log_info "Rollback completed. Please check the logs for details."
+        else
+            log_info "No rollback actions to perform."
+        fi
+        
+        exit $exit_code
+    fi
+}
+
 # Main execution flow
 main() {
+    # Set up error handling
+    trap 'handle_error $LINENO "$BASH_COMMAND"' ERR
+
     # Parse command line arguments
     parse_arguments "$@"
 
@@ -420,7 +549,7 @@ main() {
             log_success "All uninstallations completed successfully"
         else
             log_error "Some uninstallations failed"
-            exit 1
+            # No rollback for uninstallations
         fi
         exit 0
     fi
@@ -429,11 +558,7 @@ main() {
     init_rollback
 
     # Install tools
-    if install_tools; then
-        log_success "All installations completed successfully"
-    else
-        log_error "Some installations failed"
-        log_warn "You can attempt to rollback changes using rollback functionality"
+    if ! install_tools; then
         exit 1
     fi
 

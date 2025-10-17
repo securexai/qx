@@ -118,17 +118,3 @@ kind_plugin_uninstall() {
 kind_plugin_get_latest_version() {
     curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | jq -r .tag_name
 }
-
-    log_warn "Uninstalling kind from: $install_path"
-
-    local kind_binary="$install_path/kind"
-
-    if [ -f "$kind_binary" ]; then
-        rm -f "$kind_binary"
-        log_success "kind binary removed: $kind_binary"
-    else
-        log_warn "kind binary not found: $kind_binary"
-    fi
-
-    return 0
-}
