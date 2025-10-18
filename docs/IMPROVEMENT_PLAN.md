@@ -1,3 +1,11 @@
+---
+title: "QX Improvement Plan - Completed"
+last_updated: "2025-10-18"
+status: "completed"
+audience: "reference"
+category: "history"
+---
+
 # QX Scripts Improvement Plan - COMPLETED
 
 This document outlines the completed enhancements to the QX project's installation and management scripts. All planned improvements have been successfully implemented and tested.
