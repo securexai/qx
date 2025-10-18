@@ -214,7 +214,7 @@ create_cluster() {
         kind_cmd="${kind_cmd} --verbosity 4"
     fi
 
-    if $kind_cmd; then
+    if systemd-run --scope --user -p "Delegate=yes" $kind_cmd; then
         log_success "Cluster '${CLUSTER_NAME}' created successfully"
     else
         log_error "Failed to create cluster '${CLUSTER_NAME}'"
