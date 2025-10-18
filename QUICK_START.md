@@ -47,7 +47,22 @@ bash scripts/run-tests.sh --unit
 sudo bash scripts/install-prereqs.sh --dry-run --profile minimal
 ```
 
-### 4. Read Essential Docs
+### 4. Start Local Kubernetes Environment (Optional)
+
+For full-stack development, you can start a local Kubernetes cluster:
+
+```bash
+# Start the 3-node Kind cluster
+./scripts/start-kind-cluster.sh
+
+# Verify cluster is running
+kubectl get nodes
+
+# Stop cluster when done
+./scripts/stop-kind-cluster.sh
+```
+
+### 5. Read Essential Docs
 
 **Start here** (5 minutes):
 - `REVIEW_SUMMARY.md` - Project overview and status

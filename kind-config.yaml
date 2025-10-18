@@ -1,0 +1,21 @@
+# QX Kind Cluster Configuration
+# 3-node Kubernetes cluster for local development
+# - 1 control plane node
+# - 2 worker nodes
+# - Optimized for development workflow
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: qx-dev-cluster
+
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 8443
+        protocol: TCP
+  - role: worker
+  - role: worker

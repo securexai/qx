@@ -24,6 +24,21 @@ sudo bash scripts/install-prereqs.sh --profile development
 
 For detailed setup, see the [Quick Start Guide](./QUICK_START.md).
 
+### Local Kubernetes Development
+
+Start a local 3-node Kubernetes cluster for full-stack development:
+
+```bash
+# Start cluster
+./scripts/start-kind-cluster.sh
+
+# Verify cluster
+kubectl get nodes
+
+# Stop cluster
+./scripts/stop-kind-cluster.sh
+```
+
 ## 📚 Documentation
 
 - **[📖 Documentation Index](./docs/index.md)** - Complete documentation navigation
