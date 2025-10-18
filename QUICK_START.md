@@ -1,3 +1,11 @@
+---
+title: "QX Quick Start Guide"
+last_updated: "2025-10-18"
+status: "active"
+audience: "developers"
+category: "getting-started"
+---
+
 # QX Project - Quick Start Guide
 
 **For Developers Joining After Review Integration**
@@ -50,6 +58,7 @@ sudo bash scripts/install-prereqs.sh --dry-run --profile minimal
 **For reference** (as needed):
 - `BRANCHING_AND_TESTING_STRATEGY.md` - Workflows and testing
 - `ARCHITECTURE.md` - Technical deep-dive
+- `docs/plan.md` - Project roadmap and technology stack
 
 ---
 
@@ -121,16 +130,18 @@ Quick Reference:
 Detailed Guides:
 ├── BRANCHING_AND_TESTING_STRATEGY.md ... Complete workflow
 ├── ARCHITECTURE.md ..................... Technical architecture
-└── PROJECT_STATUS_REPORT.md ............ Comprehensive analysis
+├── PROJECT_STATUS_REPORT.md ............ Comprehensive analysis
+└── docs/plan.md ........................ Project roadmap & tech stack
 
 Integration:
 ├── MERGE_INSTRUCTIONS.md ............... For maintainers
 └── POST_REVIEW_ACTION_PLAN.md .......... Implementation plan
 
-Infrastructure:
+Scripts & Infrastructure:
 ├── .githooks/README.md ................. Git hooks guide
 ├── .github/workflows/tests.yml ......... CI/CD pipeline
-└── install-hooks.sh .................... Hook installer
+├── install-hooks.sh .................... Hook installer
+└── docs/TASKS.md ....................... Completed improvements
 ```
 
 ---
