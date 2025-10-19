@@ -40,7 +40,7 @@ declare -A DEFAULT_CONFIG=(
     # Tool versions
     ["tools.bun.version"]="1.2.23"
     ["tools.bun.install_path"]="/usr/local"
-    ["tools.podman.version"]="4.9.4"
+    ["tools.podman.version"]="5.6.2"
     ["tools.kubectl.version"]="1.30.0"
     ["tools.kind.version"]="0.30.0"
 )
