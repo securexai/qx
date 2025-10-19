@@ -9,7 +9,7 @@
 PODMAN_APT_KEYRING="/etc/apt/keyrings/libcontainers-archive-keyring.gpg"
 PODMAN_APT_LIST="/etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
 PODMAN_APT_URL="https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_24.04/"
-PODMAN_APT_KEY_URL="${PODMAN_APT_URL/\:/\:}/Release.key"
+PODMAN_APT_KEY_URL="${PODMAN_APT_URL}Release.key"
 
 # Helper: get required version from channel or config (defaults to 5.6.2)
 _podman_required_version() {
